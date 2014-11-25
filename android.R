@@ -5,8 +5,15 @@ biolabs<-function(){
 }
 #### Download data set ###############
 download.data<-function(){
+  mainfolder<-paste(getwd(), "/biolabs", sep="")
+  dir.create(mainfolder)
+  setwd(mainfolder)
+  
   source.dir<-paste(getwd(), "/R-project", sep="")
   data.dir<-paste(getwd(), "/Image", sep="")
+  backup<-paste(getwd(), "/databaseBackup", sep="")
+  export<-paste(getwd(), "/R.export", sep="")
+  dir.create(backup)
   dir.create(data.dir)
   dir.create(source.dir)
   
