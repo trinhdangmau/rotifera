@@ -13,6 +13,8 @@ download.data<-function(){
   data.dir<-paste(getwd(), "/Image", sep="")
   backup<-paste(getwd(), "/databaseBackup", sep="")
   export<-paste(getwd(), "/R.export", sep="")
+  
+  dir.create(export)
   dir.create(backup)
   dir.create(data.dir)
   dir.create(source.dir)
