@@ -1,7 +1,23 @@
 ##########startup package #################
 biolabs<-function(){
+  mainDir<-"/sdcard/biolabs/R-project/"
+  subDir<-"biolabs.r"
+  if(file.exists(file.path(mainDir, subDir))==TRUE){
+  setwd(file.path(mainDir))
+  source(subDir)
   library(vegan)
   library(RSQLite)
+  }else{
+    if(file.exists("/sdcard/biolabs/")==TRUE){
+     file.remove("/sdcard/biolabs/")
+     setwd("/sdcard/")
+     download.data()
+    }else{
+     setwd("/sdcard/")
+     download.data()
+     }
+  }
+
 }
 #### Download data set ###############
 download.data<-function(){
