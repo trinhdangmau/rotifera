@@ -922,7 +922,7 @@ se<-function(x){
 
 ##### plot android ####
 plot.ad<-function(x, filename){
-pdf(ex.dir(filename), hight=5, width = 7)
+pdf(ex.dir(filename), height=5, width = 7)
 plot(x)
 dev.off()
 }
