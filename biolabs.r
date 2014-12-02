@@ -1,11 +1,3 @@
-##########startup package #################
-biolabs<-function(){
-  library("vegan", lib.loc="~/R/win-library/3.1")
-  library()
-  install.packages("ggplot2", lib="/data/Rpackages/")
-  library(ggplot2, lib.loc="/data/Rpackages/")
-}
-
 ##############Backup database ###############
 backupdata<-function(){
   dr<-getwd()
@@ -65,6 +57,7 @@ datafile<-function(){
 }
 
 ########## Show number of species GROUP BY Family or GENUS#####################
+### out put data is a vector incluse $spfamily and $spgenus ----- show number of taxa encouted in each taxa level
 high.taxon<-function(location = NULL, time = NULL){
   if (length(time)==0){
     specieslist<-species.list(location)
@@ -203,7 +196,7 @@ if(length(time)==0){
 }
 
 ############## Species ID ###################
-spid.list<-function(location = NULL, time=NULL){
+spid.list<-function(location, time=NULL){
   drv<-dbDriver("SQLite")
   con<-dbConnect(drv, datafile())
   if (!length(time)==0){
@@ -243,8 +236,6 @@ spid.list<-function(location = NULL, time=NULL){
     
     sql<-paste("SELECT  specieid FROM fullspecimen WHERE countsp = 'FALSE' AND ", loc.where, "GROUP BY specieid 
         ORDER BY specieid", sep="")
-    
-    
   }
 
   
@@ -332,8 +323,6 @@ sp.dis<-function(location, time=NULL){
   
   
 }
-
-#########separate date and month and year ###############
 
 
 ######### Rare species names from data.frame sp.dis ###########
@@ -698,6 +687,7 @@ data.map<-function(){
   data.map
 }
 
+
 ####### Count data by Single samples ##############
 count.locality<-function(localityid){
   drv<-dbDriver("SQLite")
@@ -712,8 +702,227 @@ count.locality<-function(localityid){
 count.locality.acc<-function(localityid){
   drv<-dbDriver("SQLite")
   con<-dbConnect(drv, datafile())
-  sql<-paste("SELECT specieid, count50, sum(count100, count50) AS Count100, count150, count200, count250, count300, count400, count500, count700, count1000 FROM fullspecimen WHERE localityid = '", localityid, "'", sep="")
+  sql<-paste("SELECT specieid, count50,
+             (count50 + count100) AS sum100, 
+             (count50+count100+count150) AS sum150, 
+             (count50+count100+count150+count200) AS sum200, 
+             (count50+count100+count150+count200+count250) AS sum250, 
+             (count50+count100+count150+count200+count250+count300) AS sum300,
+             (count50+count100+count150+count200+count250+count300+count400) AS sum400,
+             (count50+count100+count150+count200+count250+count300+count400+count500) AS sum500,
+             (count50+count100+count150+count200+count250+count300+count400+count500+count700) AS sum700,
+             (count50+count100+count150+count200+count250+count300+count400+count500+count700+count1000) AS sum1000
+             FROM fullspecimen WHERE localityid = '", localityid, "'", sep="")
   count.locality.acc<-dbGetQuery(con, sql)
   dbDisconnect(con)
   count.locality.acc
+}
+
+########### transpose - special for count.locality data type ###############
+transpose<-function(data){
+  pdata<-data[,-1]
+  rownames(pdata)<-data[,1]
+  tdata<-t(pdata)
+  ## this is the new chang from souce
+  tdata
+}
+
+###### Number of species in each level of individual by Locality #####
+sp.ind.level<-function(locality){
+  sumlocality<-count.locality.acc(locality)
+  sumlocality[is.na(sumlocality)]<-0
+  number.sp<-length(sumlocality[,1])
+  sp.ind.level<-as.data.frame(setNames(replicate(11,numeric(0), simplify=F),c("locality","L50","L100","L150","L200","L250", "L300", "L400", "L500", "L700", "L1000")))
+  sp.ind.level[1,1]<-locality
+  for(i in 2:11){
+    sp.ind.level[1,i]<-number.sp - sum(sumlocality[,i]==0)
+  }
+  sp.ind.level
+  
+}
+
+###### Locality by Locations ###############
+locality.list<-function(location, time = NULL){
+  drv<-dbDriver("SQLite")
+  con<-dbConnect(drv, datafile())
+  
+  ########## location ID 
+  tmp<-gsub(" ", "", location)
+  tmp<-strsplit(tmp, ",")[[1]]
+  loc.where<-paste(" locationidi = ", "'", tmp[1], "'",sep="")
+  for(i in 2:length(tmp)){
+    loc.where<-paste(loc.where, " OR locationidi = ", "'", tmp[i], "'",sep="")
+    flush.console()
+  }
+  loc.where<-paste("(", loc.where, ")", sep="")
+  
+  
+  if (!length(time)==0){
+    #############Time 
+    temp<-gsub(" ", "", time)
+    temp<-strsplit(temp, ",")[[1]]
+    time.where<-paste(" strftime('%Y', Date) = ", "'", temp[1], "'",sep="")
+    for(i in 2:length(tmp)){
+      time.where<-paste(time.where, " OR strftime('%Y', Date) = ", "'", temp[i], "'",sep="")
+      flush.console()
+    }
+    time.where<-paste("(", time.where, ")", sep="")
+    
+    sql<-paste("SELECT  localityid FROM fullspecimen WHERE ", loc.where, "AND", time.where,  " Group BY localityid", sep="")
+    
+    
+  }else{
+    sql<-paste("SELECT  localityid FROM fullspecimen WHERE ", loc.where, " Group BY localityid",sep="")
+    
+  }
+  locality.list<-dbGetQuery(con, sql)
+  dbDisconnect(con)
+  locality.list[,1]
+}
+
+###### Number of species in each level of individual by Location #######
+
+sp.ind.levels<-function(location, time = NULL){
+  locality.list<-locality.list(location, time)
+  sp.ind.levels<-NULL
+  for(i in 1:length(locality.list)){
+    sp.ind.level<-sp.ind.level(locality.list[i])
+    sp.ind.levels<-rbind(sp.ind.levels, sp.ind.level)
+  }
+  sp.ind.levels
+}
+
+#### Ignore BT locality ###
+ignore.locality<-function(locationid){
+  if(locationid=="TT"){
+    ignore<-c("V0064", "V0065", "V0066")
+  }else{
+    if(locationid=="TH"){
+      ignore<-c("V0007", "V0032")
+    }else{
+      if(locationid=="BT"){
+        ignore<-c("V0102")
+      }
+    }
+  }
+  ignore
+}
+
+
+##### plot combine species richness indies (sp accumulation and estimator)######
+bioplot<-function(location, time = NULL, estimator = "chao, chao2, jack1, jack2, boot", specaccum.method="exact"){
+  sprichness<-specaccum(sp.dis(location, time)[,-1], method = specaccum.method)
+  specpool<-specpool2(sp.dis(location, time)[,-1])
+  n <- length(sprichness$sites)
+  lchao<-rep(specpool$chao, n)
+  lchao2<-rep(specpool$chao2, n)
+  ljack1<-rep(specpool$jack1, n)
+  ljack2<-rep(specpool$jack2, n)
+  lboot<-rep(specpool$boot, n)
+  
+  ##### estimator
+  tmp<-gsub(" ", "", estimator)
+  tmp<-strsplit(tmp, ",")[[1]]
+  
+  max1<-max(sprichness$richness)
+  max2<-max(specpool)
+  maxy<-max(max1, max2)
+  maxsd<-max(sprichness$sd)
+  
+  ###plot
+  plot(sprichness$sites, sprichness$richness, ylim=range(c(0, maxy+maxsd)), type = "l", xlab="Sites", ylab=specaccum.method)
+  
+  epsilon = 0.2
+  
+  for(i in 1:length(sprichness$sites)) {
+    up = sprichness$richness[i] + sprichness$sd[i]
+    low = sprichness$richness[i] - sprichness$sd[i]
+    segments(sprichness$sites[i],low , sprichness$site[i], up)
+    segments(sprichness$sites[i]-epsilon, up , sprichness$sites[i]+epsilon, up)
+    segments(sprichness$sites[i]-epsilon, low , sprichness$sites[i]+epsilon, low)
+    }
+  if(length(tmp[tmp=="chao"])==1){
+    par(new=TRUE)
+    plot(lchao, ylim=range(c(0, maxy+maxsd)), type="l", xlab="", ylab="", axes=F)
+    text(x=2, y=specpool$chao+3, paste("Chao = ", round(specpool$chao,0), sep=""), cex=0.8, pos=4)
+  }
+  if(length(tmp[tmp=="chao2"])==1){
+    par(new=TRUE)
+    plot(lchao2, ylim=range(c(0, maxy+maxsd)), type="l", xlab="", ylab="", axes=F)
+    text(x=2, y=specpool$chao2+3, paste("Chao2 = ", round(specpool$chao2,0), sep=""), cex=0.8, pos=4)
+  }
+  if(length(tmp[tmp=="jack1"])==1){
+    par(new=TRUE)
+    plot(ljack1, ylim=range(c(0, maxy+maxsd)), type="l", xlab="", ylab="", axes=F)
+    text(x=2, y=specpool$jack1+3, paste("Jack1 = ", round(specpool$jack1,0), sep=""), cex=0.8, pos=4)
+  }
+  if(length(tmp[tmp=="jack2"])==1){
+    par(new=TRUE)
+    plot(ljack2, ylim=range(c(0, maxy+maxsd)), type="l", xlab="", ylab="", axes=F)
+    text(x=2, y=specpool$jack2+3, paste("Jack2 = ", round(specpool$jack1,0), sep=""), cex=0.8, pos=4)
+  }
+  if(length(tmp[tmp=="boot"])==1){
+    par(new=TRUE)
+    plot(lboot, ylim=range(c(0, maxy+maxsd)), type="l", xlab="", ylab="", axes=F)
+    text(x=2, y=specpool$boot+3, paste("Boot = ", round(specpool$boot,0), sep=""), cex=0.8, pos=4)
+  }
+  
+}
+
+
+### species number or species richness by localityid#######
+spnumber.locality<-function(localityid){
+  drv<-dbDriver("SQLite")
+  con<-dbConnect(drv, datafile())
+  
+  sql<-paste("SELECT localityid, count(specieid) AS spnumber FROM fullspecimen WHERE localityid = '", localityid, "'", sep="")
+  
+  spnumber.locality<-dbGetQuery(con, sql)
+  
+  dbDisconnect(con) 
+  spnumber.locality
+}
+
+### species number by location and time #########
+spnumber.location<-function(locationid, time=NULL){
+  spnumber.location<-nrow(spid.list(locationid, time))
+  spnumber.location
+}
+
+### species number by separated location ###
+spnumber.locations<-function(locationid, time=NULL){
+  spnumber.locations<-data.frame()
+  
+  tmp<-gsub(" ", "", locationid)
+  tmp<-strsplit(tmp, ",")[[1]]
+  
+  for(i in 1:length(tmp)){
+    spnumber.locations[i,1] <- tmp[i]
+    spnumber.locations[i,2] <- spnumber.location(tmp[i], time)
+  }
+  spnumber.locations
+}
+
+### species number by separated locality ####
+spnumber.localitys<-function(locationid, time=NULL){
+  locality.list<-locality.list(locationid, time)
+  spnumber.localitys<-NULL
+  for(i in 1:length(locality.list)){
+    spnumber.locality<-spnumber.locality(locality.list[i])
+    spnumber.localitys<-rbind(spnumber.localitys, spnumber.locality)
+  }
+  spnumber.localitys
+}
+
+############### se #############
+se<-function(x){
+  se<-sd(x)/sqrt(length(x))
+  se
+}
+
+##### plot android ####
+plot.ad<-function(x, filename){
+pdf(ex.dir(filename), hight=5, width = 7)
+plot(x)
+dev.off()
 }
