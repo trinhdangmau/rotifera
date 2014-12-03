@@ -934,3 +934,10 @@ plot(x)
 }
 dev.off()
 }
+
+############update plot on android #############
+plot.ad2<-function(x, filename){
+pdf(ex.dir(filename), height=5, width = 7)
+x
+dev.off()
+}
