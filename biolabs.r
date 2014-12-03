@@ -921,8 +921,16 @@ se<-function(x){
 }
 
 ##### plot android ####
-plot.ad<-function(x, filename){
+plot.ad<-function(x, filename, type = plot){
 pdf(ex.dir(filename), height=5, width = 7)
+if(type == "boxplot"){
+boxplot(x)
+}
+if(type == pie){
+pie(x)
+}
+if(type==plot){
 plot(x)
+}
 dev.off()
 }
