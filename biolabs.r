@@ -33,8 +33,7 @@ ex.dir<-function(filename){
 }
 
 ###############Export richness, sd to data ##############
-exportspecaccum <- function(data, filename)
-{
+exportspecaccum <- function(data, filename) {
   if (class(data)=="specaccum"){
     x<-rbind.data.frame(data$richness, data$sd)
     as.data.frame(x)
@@ -94,12 +93,27 @@ spname<-function(spid){
   }
   spname
 }
+##### as.tring "sp1, sp2" to "sp1", "sp2" #########
+mlist<-function(x){
+  if (inherits(x, "mlist")) 
+    return(x)
+  x<-gsub(" ", "", x)
+  if(length(x)==1){
+    if(grepl(",", x)==TRUE){
+      x<-strsplit(x, ",")
+      x<-x[[1]]
+    }
+  }
+  class(x)<-"mlist"
+  x
+}
 
 ######### show species names from species IDs ###################################
 spnames<-function(spids){
-  spids<-gsub(" ", "", spids)
-  spids<-strsplit(spids, ",")
-  spids<-spids[[1]]
+  #spids<-gsub(" ", "", spids)
+  #spids<-strsplit(spids, ",")
+  #spids<-spids[[1]]
+  spids<-mlist(spids)
   species.name<-NULL
   null.sp<-"SpID not found in list:"
   for(i in 1:length(spids)){
@@ -139,7 +153,7 @@ if(length(time)==0){
     }
   loc.where<-paste("(", loc.where, ")", sep="")
   
-  ###########
+  ####
   sql <- paste("SELECT  familyname, specieid, genus, species, spname, author", loc.col,
                "FROM fullspecimen
         WHERE countsp = 'FALSE' AND ", loc.where,
@@ -168,7 +182,7 @@ if(length(time)==0){
   }
   loc.where<-paste("(", loc.where, ")", sep="")
   
-  #############Time ##########
+  #############Time ##
   temp<-gsub(" ", "", time)
   temp<-strsplit(temp, ",")[[1]]
   time.where<-paste(" strftime('%Y', Date) = ", "'", temp[1], "'",sep="")
@@ -189,9 +203,7 @@ if(length(time)==0){
 }
   
   species.list<-dbGetQuery(con, sql)
-  
   dbDisconnect(con)  
-
   species.list
 }
 
@@ -201,7 +213,7 @@ spid.list<-function(location, time=NULL){
   con<-dbConnect(drv, datafile())
   if (!length(time)==0){
     
-    ########## location ID ##########
+    ########## location ID ##
     tmp<-gsub(" ", "", location)
     tmp<-strsplit(tmp, ",")[[1]]
     loc.where<-paste(" locationidi = ", "'", tmp[1], "'",sep="")
@@ -211,7 +223,7 @@ spid.list<-function(location, time=NULL){
     }
     loc.where<-paste("(", loc.where, ")", sep="")
     
-    #############Time ##########
+    #############Time ##
     temp<-gsub(" ", "", time)
     temp<-strsplit(temp, ",")[[1]]
     time.where<-paste(" strftime('%Y', Date) = ", "'", temp[1], "'",sep="")
@@ -237,14 +249,9 @@ spid.list<-function(location, time=NULL){
     sql<-paste("SELECT  specieid FROM fullspecimen WHERE countsp = 'FALSE' AND ", loc.where, "GROUP BY specieid 
         ORDER BY specieid", sep="")
   }
-
-  
   spid.list<-dbGetQuery(con, sql)
-  
-  dbDisconnect(con)  
-  
+  dbDisconnect(con)
   spid.list
-  
 }
 
 ############## Species distribution ##################
@@ -297,16 +304,15 @@ sp.dis<-function(location, time=NULL){
       }
       loc.where<-paste("(", loc.where, ")", sep="")
       
-      #############Time ##########
+      #############Time ##
       temp<-gsub(" ", "", time)
       temp<-strsplit(temp, ",")[[1]]
       time.where<-paste(" strftime('%Y', Date) = ", "'", temp[1], "'",sep="")
-      for(i in 2:length(tmp)){
+      for(i in 2:length(temp)){
         time.where<-paste(time.where, " OR strftime('%Y', Date) = ", "'", temp[i], "'",sep="")
         flush.console()
       }
       time.where<-paste("(", time.where, ")", sep="")
-      
       
       sql<-paste("SELECT  localityID", string.spid.tmp, "FROM fullspecimen WHERE", loc.where, "AND", time.where, "GROUP BY localityID 
         ORDER BY localityID", sep="")
@@ -319,11 +325,7 @@ sp.dis<-function(location, time=NULL){
       
     }
   }
-  
-  
-  
 }
-
 
 ######### Rare species names from data.frame sp.dis ###########
 rare.sp<-function(data, rares){
@@ -354,12 +356,9 @@ rare.sp<-function(data, rares){
       }
       rare.sp.com<-spnames(rare.sp)
       rare.sp.com
-    }
-    
+    } 
   }
-
 }
-
 
 ##################convert date time file in ###########
 update.date<-function(){
@@ -376,7 +375,6 @@ update.date<-function(){
     date.lo<-dbGetQuery(con, sql1)
     dbDisconnect(con)
   }
-  
 }
 
 #######rare species with distribution#########
@@ -415,7 +413,6 @@ locality.sp<-function(spid, data){
   locality.sp
 }
 
-
 #######bio.taxon # data sheet prepare for tree analysis #############
 bio.taxon<-function(location, time = NULL){
   drv<-dbDriver("SQLite")
@@ -423,7 +420,7 @@ bio.taxon<-function(location, time = NULL){
   
   if (!length(time)==0){
     
-    ########## location ID ##########
+    ########## location ID ##
     tmp<-gsub(" ", "", location)
     tmp<-strsplit(tmp, ",")[[1]]
     loc.where<-paste(" locationidi = ", "'", tmp[1], "'",sep="")
@@ -433,7 +430,7 @@ bio.taxon<-function(location, time = NULL){
     }
     loc.where<-paste("(", loc.where, ")", sep="")
     
-    #############Time ##########
+    #############Time
     temp<-gsub(" ", "", time)
     temp<-strsplit(temp, ",")[[1]]
     time.where<-paste(" strftime('%Y', Date) = ", "'", temp[1], "'",sep="")
@@ -461,14 +458,9 @@ bio.taxon<-function(location, time = NULL){
     
     
   }
-  
-  
   bio.taxon<-dbGetQuery(con, sql)
-  
-  dbDisconnect(con)  
-  
+  dbDisconnect(con)
   bio.taxon
-  
 }
 
 ######### Tree diverstiy ########
@@ -483,9 +475,33 @@ tree.diver<-function(location, time = NULL){
   dtree
 }
 
+##### re-christened complementarity #######
+complemen<-function(location, time=NULL){
+  tmp<-gsub(" ", "", location)
+  tmp<-strsplit(tmp, ",")[[1]]
+  complemen<-data.frame()
+  colnames<-NULL
+  for(i in 1:(length(tmp)-1)){
+    Si <- spnumber.location(tmp[i], time)
+    colnames<-c(colnames, tmp[i])
+    for(j in (i+1):length(tmp)){
+      Sj <- spnumber.location(tmp[j], time)
+      z<-paste(tmp[i], tmp[j], sep=",")
+      Sij <-spnumber.location(z, time)
+      Uij <- (2*Sij) - (Si + Sj)
+      Cij <- Uij/Sij
+      complemen[i, i] <- NA
+      complemen[j, i] <- Cij
+    }
+  }
+  rownames<-c(colnames, tmp[length(tmp)])
+  colnames(complemen)<-colnames
+  rownames(complemen)<-rownames
+  complemen
+}
+
 ############Species pool (update Chao 2)##################
-specpool2 <- function (x, pool) 
-{
+specpool2 <- function (x, pool) {
   x <- as.matrix(x)
   if (missing(pool)) 
     pool <- rep("All", nrow(x))
@@ -552,8 +568,93 @@ specpool2 <- function (x, pool)
   out
 }
 
+############Species pool (update for run Colwell)##################
+specpool3 <- function (x, pool) {
+  x <- as.matrix(x)
+  if (missing(pool)) 
+    pool <- rep("All", nrow(x))
+  if (length(pool) != NROW(x)) 
+    stop("length of 'pool' and number rows in 'x' do not match")
+  if (any(nas <- is.na(pool))) {
+    pool <- pool[!nas]
+    x <- x[!nas, , drop = FALSE]
+  }
+  out <- seq(1:nrow(x))
+  groups <- table(pool)
+  inds <- names(groups)
+  S <- var.chao <- chao <- var.chao2 <- chao.2 <- var.jack1 <- jack.1 <- jack.2 <- var.boot <- bootS <- rep(NA, 
+                                                                                                            length(inds))
+  names(S) <- names(var.chao) <- names(chao) <- names(var.chao2) <- names(chao.2) <- names(var.jack1) <- names(jack.1) <- names(jack.2) <- names(var.boot) <- names(bootS) <- inds
+  for (is in inds) {
+    a1 <- a2 <- NA
+    gr <- out[pool == is]
+    n <- length(gr)
+    if (n <= 0) 
+      next
+    X <- x[gr, , drop = FALSE]
+    freq <- colSums(X > 0)
+    p <- freq[freq > 0]/n
+    S[is] <- sum(freq > 0)
+    if (S[is] == 0) 
+      next
+    if (n >= 1) 
+      a1 <- sum(freq == 1)
+    if (n >= 2) 
+      a2 <- sum(freq == 2)
+    else 0
+    chao[is] <- S[is] + if (!is.na(a2) && a2 > 0){
+      ((n-1)/n)*(a1*a1)/2/a2
+    }else (((n-1)/n)*(a1*a1)/2)
+      
+    chao.2[is] <- S[is] + if (!is.na(a2) && a2 > 0) 
+      ((n-1)/n)*((a1*a1-a1)/2/(a2+1))
+    else 0
+    jack.1[is] <- S[is] + a1 * (n - 1)/n
+    jack.2[is] <- S[is] + a1 * (2 * n - 3)/n - a2 * (n - 
+                                                       2)^2/n/(n - 1)
+    bootS[is] <- S[is] + sum((1 - p)^n)
+    aa <- if (!is.na(a2) && a2 > 0) 
+      a1/a2
+    else 0
+    var.chao[is] <- a2 * (0.5 + (1 + aa/4) * aa) * aa * 
+      aa
+    var.chao2[is] <- ((n-1)/n)*((a1*a1-a1)/2/(a2+1))+((n-1)/n)^2*((a1*(2*a1-1)^2)/4/(a2+1)^2) + ((n-1)/n)^2*((a1*a1*a2*(a1-1)^2)/4/(a2+1)^4)
+    if (!is.na(a1) && a1 > 0) {
+      jf <- table(rowSums(X[, freq == 1, drop = FALSE] > 
+                            0))
+      var.jack1[is] <- (sum(as.numeric(names(jf))^2 * 
+                              jf) - a1/n) * (n - 1)/n
+    }
+    pn <- (1 - p)^n
+    X <- X[, freq > 0, drop = FALSE]
+    Zp <- (crossprod(X == 0)/n)^n - outer(pn, pn, "*")
+    var.boot[is] <- sum(pn * (1 - pn)) + 2 * sum(Zp[lower.tri(Zp)])
+  }
+  out <- list(Species = S, chao = chao, chao.se = sqrt(var.chao), chao2=chao.2, chao2.se = sqrt(var.chao2),
+              jack1 = jack.1, jack1.se = sqrt(var.jack1), jack2 = jack.2, 
+              boot = bootS, boot.se = sqrt(var.boot), n = as.vector(groups))
+  out <- as.data.frame(out)
+  attr(out, "pool") <- pool
+  out
+}
 
-#
+###### run species poollllll x = sp.dis(location, time)[, -1] ###############
+run.specpool<-function(x, pool, n=100){
+  l <- nrow(x)
+  rsp<-NULL
+  for (i in 1:l){
+    rspj<-NULL
+    for(j in 1:n){
+      xij<-x[sample(l, i), ]
+      rspij<-specpool3(xij, pool)
+      rspj<-rbind(rspj, rspij)
+    }
+    rspi<-colMeans(rspj)
+    rsp<-rbind(rsp, rspi)
+  }
+  return(rsp)
+}
+
 ###############Slop of Accumulation ##################
 slop.accum<-function(acumuData){
   if (class(acumuData)=="specaccum"){
@@ -597,7 +698,6 @@ plot.slop.run<-function(datasp, nsp, rep){
     lines(slop.sp[i,])
     flush.console()
   }
-  
 }
 
 ############## run specaccum ###############
@@ -613,7 +713,6 @@ run.specaccum<-function(dataspeca, nsp, rep){ #####dataspeca = sp.dis("location"
   run.spe
 }
 
-
 ########### run plot specaccum #############
 plot.specaccum.run<-function(datasp, nsp, rep){  #####dataspeca = sp.dis("location", "time")
   specaccum.sp<-run.specaccum(datasp, nsp, rep)
@@ -623,7 +722,6 @@ plot.specaccum.run<-function(datasp, nsp, rep){  #####dataspeca = sp.dis("locati
     lines(specaccum.sp[i,])
     flush.console()
   }
-  
 }
 
 ######### Search Advance ############
@@ -649,7 +747,6 @@ biosearch<-function(type = NULL, x = NULL){ #### type: data type which you want 
   rs.biosearch
 }
 
-
 ####### Table list #################
 table.list<-function() {
   drv<-dbDriver("SQLite")
@@ -658,6 +755,7 @@ table.list<-function() {
   dbDisconnect(con)
   table.list
 }
+
 ##### Field List ################
 field.list<-function(tablename){
   drv<-dbDriver("SQLite")
@@ -666,6 +764,7 @@ field.list<-function(tablename){
   dbDisconnect(con)
   field.list
 }
+
 ###### Data Maps ######
 data.map<-function(){
   drv<-dbDriver("SQLite")
@@ -687,8 +786,7 @@ data.map<-function(){
   data.map
 }
 
-
-####### Count data by Single samples ##############
+####### Count data by Single samples ######
 count.locality<-function(localityid){
   drv<-dbDriver("SQLite")
   con<-dbConnect(drv, datafile())
@@ -698,7 +796,7 @@ count.locality<-function(localityid){
   count.locality
 }
 
-######## Count data by Single samples with accumulate by level (count100 = count50+count100)#################
+######## Count data by Single samples with accumulate by level (count100 = count50+count100)######
 count.locality.acc<-function(localityid){
   drv<-dbDriver("SQLite")
   con<-dbConnect(drv, datafile())
@@ -718,7 +816,7 @@ count.locality.acc<-function(localityid){
   count.locality.acc
 }
 
-########### transpose - special for count.locality data type ###############
+########### transpose - special for count.locality data type ######
 transpose<-function(data){
   pdata<-data[,-1]
   rownames(pdata)<-data[,1]
@@ -727,7 +825,15 @@ transpose<-function(data){
   tdata
 }
 
-###### Number of species in each level of individual by Locality #####
+###### transpose2 - special for high.taxon data type #####
+transpose2<-function(data){
+  t2data<-t(data$spnumber)
+  t2data<-as.data.frame(t2data)
+  names(t2data)<-data[,1]
+  t2data
+}
+
+###### Number of species in each level of individual by Locality ######
 sp.ind.level<-function(locality){
   sumlocality<-count.locality.acc(locality)
   sumlocality[is.na(sumlocality)]<-0
@@ -741,7 +847,7 @@ sp.ind.level<-function(locality){
   
 }
 
-###### Locality by Locations ###############
+###### Locality by Locations #####
 locality.list<-function(location, time = NULL){
   drv<-dbDriver("SQLite")
   con<-dbConnect(drv, datafile())
@@ -780,8 +886,21 @@ locality.list<-function(location, time = NULL){
   locality.list[,1]
 }
 
-###### Number of species in each level of individual by Location #######
+### number of locality per location ######
+sample.number<-function(locationid, time=NULL){
+  sample.number<-data.frame()
+  
+  tmp<-gsub(" ", "", locationid)
+  tmp<-strsplit(tmp, ",")[[1]]
+  
+  for(i in 1:length(tmp)){
+    sample.number[i,1] <- tmp[i]
+    sample.number[i,2] <- length(locality.list(tmp[i], time))
+  }
+  sample.number
+}
 
+### Number of species in each level of individual by Location #####
 sp.ind.levels<-function(location, time = NULL){
   locality.list<-locality.list(location, time)
   sp.ind.levels<-NULL
@@ -792,16 +911,16 @@ sp.ind.levels<-function(location, time = NULL){
   sp.ind.levels
 }
 
-#### Ignore BT locality ###
+#### Ignore BT locality #####
 ignore.locality<-function(locationid){
   if(locationid=="TT"){
-    ignore<-c("V0064", "V0065", "V0066")
+    ignore<-c("V0064", "V0065", "V0066", "V0075", "V0226")
   }else{
     if(locationid=="TH"){
-      ignore<-c("V0007", "V0032")
+      ignore<-c("V0007", "V0032", "V0192")
     }else{
       if(locationid=="BT"){
-        ignore<-c("V0102")
+        ignore<-c("V0102", "V0146", "V0142")
       }
     }
   }
@@ -809,7 +928,7 @@ ignore.locality<-function(locationid){
 }
 
 
-##### plot combine species richness indies (sp accumulation and estimator)######
+##### plot combine species richness indies (sp accumulation and estimator)#####
 bioplot<-function(location, time = NULL, estimator = "chao, chao2, jack1, jack2, boot", specaccum.method="exact"){
   sprichness<-specaccum(sp.dis(location, time)[,-1], method = specaccum.method)
   specpool<-specpool2(sp.dis(location, time)[,-1])
@@ -870,7 +989,7 @@ bioplot<-function(location, time = NULL, estimator = "chao, chao2, jack1, jack2,
 }
 
 
-### species number or species richness by localityid#######
+### species number or species richness by localityid######
 spnumber.locality<-function(localityid){
   drv<-dbDriver("SQLite")
   con<-dbConnect(drv, datafile())
@@ -883,13 +1002,13 @@ spnumber.locality<-function(localityid){
   spnumber.locality
 }
 
-### species number by location and time #########
+### species number by location and time #######
 spnumber.location<-function(locationid, time=NULL){
   spnumber.location<-nrow(spid.list(locationid, time))
   spnumber.location
 }
 
-### species number by separated location ###
+### species number by separated location #######
 spnumber.locations<-function(locationid, time=NULL){
   spnumber.locations<-data.frame()
   
@@ -903,7 +1022,7 @@ spnumber.locations<-function(locationid, time=NULL){
   spnumber.locations
 }
 
-### species number by separated locality ####
+### species number by separated locality ########
 spnumber.localitys<-function(locationid, time=NULL){
   locality.list<-locality.list(locationid, time)
   spnumber.localitys<-NULL
@@ -919,25 +1038,399 @@ se<-function(x){
   se<-sd(x)/sqrt(length(x))
   se
 }
+##### round up ::5 ########
+roundup5<-function(x){
+  x<-round(x, 0)
+  x1<-x/5
+  x3<-x1-trunc(x1)
+  x4<-5-(x3*5)
+  X<-x+x4
+  X
+}
+#### get location names from location code #####
+location.names<-function(location){
+  tmp<-gsub(" ", "", location)
+  tmp<-strsplit(tmp, ",")[[1]]
+  
+  drv<-dbDriver("SQLite")
+  con<-dbConnect(drv, datafile())
+  
+  location.names<-NULL
+  for(i in 1: length(tmp)){
+  sql<-paste("SELECT name FROM location WHERE LocationID = '", tmp[i], "'", sep="")
+  
+  location.name<-dbGetQuery(con, sql)
+  location.name<-location.name$Name
+  location.names<-c(location.names, location.name)
+  }
+  dbDisconnect(con) 
+  location.names
+}
 
-##### plot android ####
-plot.ad<-function(x, filename, type = "plot"){
-pdf(ex.dir(filename), height=5, width = 7)
-if(type == "boxplot"){
-boxplot(x)
+#### accumulator plot for specaccum data ##############
+accumulator.plot<-function(data, ylim, xlim, type, pch){
+  epsilon = 0.2
+  
+  plot(data$sites, data$richness, ylim=ylim, xlim=xlim, type = type, pch = pch, xlab="Sites", ylab=data$method)
+  
+  for(i in 1:length(data$sites)) {
+    up = data$richness[i] + data$sd[i]
+    low = data$richness[i] - data$sd[i]
+    segments(data$sites[i],low , data$site[i], up)
+    segments(data$sites[i]-epsilon, up , data$sites[i]+epsilon, up)
+    segments(data$sites[i]-epsilon, low , data$sites[i]+epsilon, low)
+  }
 }
-if(type == "pie"){
-pie(x)
-}
-if(type=="plot"){
-plot(x)
-}
-dev.off()
+######### fit specaccum with log(x) data is species richness class ##############
+fit.specaccum<-function(x){
+  freq<-as.numeric(x$sites)
+  mod<-lm(x$richness~log(x$sites))
+  sum<-summary(mod)
+  a<-sum$coeff[1,1]
+  b<-sum$coeff[2,1]
+  r.square<-sum$r.square
+  out<-list(mod=mod, a=a, b=b, r.square=r.square, freq=freq)
+  out
 }
 
-############update plot on android #############
-plot.ad2<-function(x, filename){
-pdf(ex.dir(filename), height=5, width = 7)
-x
-dev.off()
+#### accumulator plot for specaccum data 2 ##############
+accumulator.plot2<-function(data, ylim, xlim, type, pch, cex, sd=TRUE, c.lty){
+  plot(data$sites, data$richness, ylim=ylim, xlim=xlim, type = type, pch = pch, xlab="Sites", ylab=data$method, cex=cex)
+  if(sd=="TRUE"){
+    polygon(c(data$sites, rev(data$sites)), c(data$richness-data$sd, rev(data$richness+data$sd)), col=NA, border="black")
+  }
+  fit<-fit.specaccum(data)
+  par(new=TRUE)
+  curve(fit$a+fit$b*log(x), 1, max(fit$freq), ylim=ylim, xlim=xlim, col="black", lty=c.lty, lwd=2, ann=F, axes=F)
+}
+
+
+##### plot compare species richness by location ######
+plot.csr<-function(location, time = NULL, by = "locations", specaccum.method="exact", legend = TRUE){
+  #location id string
+  tmp<-strsplit(gsub(" ", "", location), ",")[[1]]
+  
+  if(by == "locations"){    
+    if(length(tmp)>1){
+      maxx<-max(sample.number(location, time)$V2)
+      maxy<-max(spnumber.locations(location, time)$V2)
+      
+      for(i in 1:length(tmp)){
+        sprichness<-specaccum(sp.dis(tmp[i], time)[,-1], method = specaccum.method)
+        accumulator.plot2(sprichness, ylim=range(c(0, maxy)), xlim=range(c(0, maxx)), type = "p", pch = i, cex=0.7)
+        par(new=TRUE)
+      }
+      par(new=FALSE)
+      if(legend == TRUE){
+        legend.name<-location.names(location)
+        legend("bottomright", legend=legend.name, pch=c(1:length(tmp)))
+      }
+    }else{print("Location contain only 1 value which not mean in comparing. May you want to have look bioplot function")}
+  }
+  
+  if(by == "time"){
+    #time string
+    tmpt<-strsplit(gsub(" ", "", time), ",")[[1]]
+    if(length(tmpt)>1){
+      ### calculate maxx and maxy
+      maxx<-NULL
+      maxy<-NULL
+        for(j in 1:length(tmpt)){
+          maxxi<-sum(sample.number(location, tmpt[j])$V2)
+          maxyi<-spnumber.location(location, tmpt[j])
+          maxx<-c(maxx, maxxi)
+          maxy<-c(maxy, maxyi)
+        }
+      maxx<-max(maxx)
+      maxy<-max(maxy)
+      
+      for(i in 1:length(tmpt)){
+        sprichness<-specaccum(sp.dis(location, tmpt[i])[,-1], method = specaccum.method)
+        accumulator.plot(sprichness, ylim=range(c(0, maxy)), xlim=range(c(0, maxx)), type = "o", pch = i)
+        par(new=TRUE)
+      }
+      par(new=FALSE)
+      if(legend == TRUE){
+        legend.name<-tmpt
+        legend("bottomright", legend=legend.name, pch=c(1:length(tmpt)))
+      }
+      
+    }else{print("Time serial contain only 1 value which not mean in the comparison. May you want to have look bioplot function")}
+  }
+  
+  if(by == "both"){
+    #time string
+    tmpt<-strsplit(gsub(" ", "", time), ",")[[1]]
+    if(length(tmpt)>1 && length(tmp)>1){
+      ### calculate maxx and maxy
+      maxx<-NULL
+      maxy<-NULL
+      for(i in 1:length(tmp)){
+        for(j in 1:length(tmpt)){
+          maxxi<-max(sample.number(tmp[i], tmpt[j])$V2)
+          maxyi<-max(spnumber.locations(tmp[i], tmpt[j])$V2)
+          
+          maxx<-c(maxx, maxxi)
+          maxy<-c(maxy, maxyi)
+        }
+      }
+      maxx<-max(maxx)
+      maxy<-max(maxy)
+      
+      legend.name<-NULL
+      pch<-1
+      for(i in 1:length(tmp)){
+        for(j in 1:length(tmpt)){
+          sprichness<-specaccum(sp.dis(tmp[i], tmpt[j])[,-1], method = specaccum.method)
+          accumulator.plot(sprichness, ylim=range(c(0, maxy)), xlim=range(c(0, maxx)), type = "o", pch = pch)
+          legend.namej<-paste(tmp[i], tmpt[j], sep=",")
+          legend.name<-c(legend.name, legend.namej)
+          pch<-pch+1
+          par(new=TRUE)
+        }
+      }
+      par(new=FALSE)
+      if(legend == TRUE){
+        legend("bottomright", legend=legend.name, pch=c(1:(length(tmp)*length(tmpt))))
+      }
+      
+    }else{print("Time serial contain only 1 value which not mean in the comparison. May you want to have look bioplot function")}
+  }
+  
+}
+
+#### plot specaccum with run specpool, x data = sp.dis()[, -1] ##########
+plot.specaccump<-function(richness, rpool){
+  maxy<-max(rpool, na.rm=T)
+  maxx<-max(richness$sites, na.rm=T)
+  accumulator.plot2(richness, ylim=range(c(0, maxy)), xlim=range(c(0, maxx)), type = "p", pch = 1, cex=0.7, sd=FALSE, c.lty=1)
+  chao<-rpool[ ,colnames(rpool)=="chao"]
+  chao2<-rpool[ ,colnames(rpool)=="chao2"]
+  jack1<-rpool[ ,colnames(rpool)=="jack1"]
+  jack2<-rpool[ ,colnames(rpool)=="jack2"]
+  boot<-rpool[ ,colnames(rpool)=="boot"]
+  par(new=TRUE)
+  plot(chao, ylim=range(c(0, maxy)), xlim=range(c(0, maxx)), type = "l", lty = 2, cex=1, ann=F, axes=F)
+  par(new=TRUE)
+  #plot(chao2, ylim=range(c(0, maxy)), xlim=range(c(0, maxx)), type = "l", lty = 3, cex=1, ann=F, axes=F)
+  #par(new=TRUE)
+  plot(jack1, ylim=range(c(0, maxy)), xlim=range(c(0, maxx)), type = "l", lty = 3, cex=1, ann=F, axes=F)
+  par(new=TRUE)
+  plot(jack2, ylim=range(c(0, maxy)), xlim=range(c(0, maxx)), type = "l", lty = 4, cex=1, ann=F, axes=F)
+  par(new=TRUE)
+  plot(boot, ylim=range(c(0, maxy)), xlim=range(c(0, maxx)), type = "l", lty = 5, cex=1, ann=F, axes=F)
+  legend.name<-c("Fitted acc.", "Chao 2", "Jacknife 1", "Jacknife 2", "Boot")
+  legend("bottomright", legend=legend.name, lty=c(1:5))
+}
+
+######### HUBBELL ###########
+
+##### optimal.theta from untb ############
+h.theta<-function (x, interval = NULL, N = NULL, like = NULL, ...) 
+{
+  #x <- as.count(x)
+  J <- sum(x) #no.of.ind(x)
+  S <- length(x) #no.of.spp(x)
+  if (is.null(interval)) {
+    interval <- c(0.001/J, J)
+  }
+  jj <- optimize(f = theta.likelihood, interval = interval, 
+                 maximum = TRUE, give.log = TRUE, x = NULL, S = S, J = J, 
+                 ...)
+  theta.mle <- jj$maximum
+  max.like <- jj$objective
+  if (!is.null(N) & !is.null(like)) {
+    stop("N and like non-null.   Specify one only")
+  }
+  if (!is.null(N)) {
+    theta.dist <- rep(NA, N)
+    for (i in 1:N) {
+      jj <- rand.neutral(J = J, theta = theta.mle)
+      theta.dist[i] <- Recall(x = jj, ...)
+    }
+    return(theta.dist)
+  }
+  if (!is.null(like)) {
+    g <- function(theta) {
+      theta.likelihood(theta = theta, S = S, J = J, give.log = TRUE) - 
+        max.like + like
+    }
+    return(c(lower = uniroot(f = g, lower = 1/J, upper = theta.mle)$root, 
+             mle = theta.mle, upper = uniroot(f = g, lower = theta.mle, 
+                                              upper = J)$root))
+  }
+  return(theta.mle)
+}
+
+######### theta.likelihood1 #############
+theta.likelihood<-function (theta, x = NULL, S = NULL, J = NULL, give.log = TRUE) 
+{
+  if (!is.null(x)) {
+    J <- sum(x)#no.of.ind(x)
+    S <- length(x)#no.of.spp(x)
+  }
+  if (give.log) {
+    return(S * log(theta) + lgamma(theta) - lgamma(theta + 
+                                                     J))
+  }
+  else {
+    return(theta^S * exp(lgamma(theta) - lgamma(theta + J)))
+  }
+}
+
+
+##### return predic for power model ?? ########
+power<-function(x, a, b){
+  y<-NULL
+  for(i in 1:length(x)){
+    y1<-a*(x[i]^b)
+    y <-c(y, y1)
+  }
+  return(y)
+}
+
+####### Hubbell generator ########
+hubbell.build <- function(theta, J){
+  comm<-NULL
+  for(j in 1:J){
+    if (runif(1)<theta/(theta+j-1))
+      comm<-c(comm, 1)
+    else{
+      sp<-sample(length(comm), 1, prob=comm/(j-1))
+      comm[sp]<-comm[sp]+1
+    }
+  }
+  return(comm)
+}
+
+#####test hubbell - not work####
+hubbell.test<-function(theta, J){
+  comm<-NULL
+  for(j in 1:J){
+    if(runif(1)<theta/(theta+j-1)){
+      comm<-c(comm, 1)
+      }else{
+        cum<-comm[1]/(j-1)
+        for(i in 2:length(comm)){
+          cumi<-comm[i]/(j-1) + cum[i - 1]
+          cum<-c(cum, cumi)
+        }
+        for(z in 1: length(cum)){
+          if(cum[z] > runif(1)){
+            comm[z]<-comm[z]+1
+            break
+          }
+        }
+      }
+  }
+  return(comm)
+}
+
+######### run Hubbell genreator ########
+run.hubbel<-function(theta, J, n){
+  run.hubbel<-data.frame()
+  for(i in 1:n){
+   x<- hubbell.build(theta, J)
+   for(j in 1:length(x)){
+     run.hubbel[i, j]<-x[j]
+   }
+  }
+  out <-sapply(run.hubbel, function(x1) mean(x1, na.rm=TRUE))
+  out
+}
+
+##### hubbell fit #############
+hubbell.fit<-function(theta, J, n, m = 5){
+  #for(i in 1:m){
+    ex<-table(round(run.hubbel(theta, J, n), 0))
+    x<-as.numeric(names(ex))
+    y<-as.numeric(ex)
+    z<-data.frame(x, y)
+    fit<-nls(y~a*x^b, data=z, start=list(a=1,b=1))
+    r.square <- 1 - (sum(residuals(fit)^2)/sum((y - mean(y))^2))
+  #}
+  out<-list(fit=fit, r.square=r.square)
+  out
+}
+
+##### Hubbell total - x<-as.numeric(hightaxon()$spfamily$spnumber)########
+hubbell<-function(x, n = 100){
+  theta<-h.theta(x)
+  J <- sum(x)
+  ob<-table(x)
+  nm<-names(ob)
+  ob<-as.vector(ob)
+  names(ob)<-nm
+  freq<-as.numeric(names(ob))
+  theta.res<-run.hubbel(theta, J, n)
+  theta.res<-round(theta.res, 0)
+  
+  h.fit<-hubbell.fit(theta, J, n)
+  a<-summary(h.fit$fit)$parameters[1,1]
+  b<-summary(h.fit$fit)$parameters[2,1]
+  h.y <- power(freq, a, b)
+  
+  out<-list(num.ind = J, freq = freq, obs = ob, h.ex = h.y, h.fit=h.fit$fit, r.square=h.fit$r.square, theta = theta)
+  class(out) <- "hubbell"
+  out
+}
+
+#### plot hubbell ###########
+plot.hubbell<-function(x, xlab = "Frequency", ylab = "Species", bar.col = "skyblue",
+                       line.col= "red", lwd=2, ...)
+{
+  freq <- x$freq
+  
+  plot(freq, x$obs, ylab=ylab, xlab=xlab,
+       ylim=c(0,max(x$obs)),  xlim=c(0.5, max(freq)+0.5), type="n", ...)
+  rect(freq-0.5,0,freq+0.5,x$obs, col=bar.col, ...)
+  a <- summary(x$h.fit)$parameters[1,1]
+  b <- summary(x$h.fit)$parameters[2,1]
+  curve(a*x^b, 1, max(freq), col=line.col, lwd=lwd, add=TRUE, ...)
+  invisible()
+}
+
+#### fisher estimator ####
+fisher.estimator<-function(fisherdata){
+  f<-NULL
+  for(i in 1:length(fisherdata$fisher)){
+    n<-names(fisherdata$fisher[i])
+    n<-as.integer(n)
+    fi<-fisherdata$estimate*((fisherdata$nuisance)^n)/n
+    f<-c(f, fi)
+  }
+  freq<-as.integer(names(fisherdata$fisher))
+  ob<-as.integer(fisherdata$fisher)
+  propf<-prop.table(f)
+  out<-list(propf=propf, estimate=f, freq=freq, ob=ob)
+  class(out) <- "fisherex"
+  out
+}
+
+##### Adjust R square - data = fisher = fisherfit(hightaxon()); hubbell ########
+adj.r.square<-function(data){
+  classout<-class(data)
+  CLASSOUT <- c("fisherfit", "hubbell", "prestonfit")
+  classout <- match.arg(classout, CLASSOUT)
+  switch(classout, fisherfit = {
+    data<-fisher.estimator(data)
+    freq<-data$ob
+    ex.fit<-data$estimate
+    mod<-lm(ex.fit~freq)
+    adj.r.square<-summary(mod)$adj.r.square
+  }, hubbell = {
+    freq<-as.numeric(data$obs)
+    ex.fit<-data$h.ex
+    mod<-lm(ex.fit~freq)
+    ex.fit<-as.integer(ex.fit)
+    #ex.fit[which(ex.fit==Inf)]<-NA
+    #ex.fit[which(is.nan(ex.fit))] = NA
+    adj.r.square<-summary(mod)$adj.r.square
+  }, prestonfit={
+    freq<-data$freq
+    ex.fit<-data$fitted
+    mod<-lm(ex.fit~freq)
+    adj.r.square<-summary(mod)$adj.r.square
+  })
+  adj.r.square
 }
